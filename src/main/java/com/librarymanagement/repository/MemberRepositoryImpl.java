@@ -43,18 +43,47 @@ public class MemberRepositoryImpl implements MemberRepository {
 
     @Override
     public List<Member> findAll() {
+        return findAll(new PageRequest(0, 1000)).getData();
+    }
+
+    @Override
+    public PagedResult<Member> findAll(PageRequest pageRequest) {
         List<Member> members = new ArrayList<>();
-        String sql = "SELECT * FROM members";
+        String order = pageRequest.isAscending() ? "ASC" : "DESC";
+        String sql = "SELECT * FROM members ORDER BY " + pageRequest.getSortBy() + " " + order +
+                     " LIMIT ? OFFSET ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, pageRequest.getSize());
+            stmt.setInt(2, pageRequest.getOffset());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    members.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error finding members: " + e.getMessage(), e);
+        }
+
+        long total = count();
+        return new PagedResult<>(members, pageRequest.getPage(), pageRequest.getSize(), total);
+    }
+
+    @Override
+    public long count() {
+        String sql = "SELECT COUNT(*) FROM members";
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-            while (rs.next()) {
-                members.add(mapRow(rs));
+            if (rs.next()) {
+                return rs.getLong(1);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error finding all members: " + e.getMessage(), e);
+            throw new RuntimeException("Error counting members: " + e.getMessage(), e);
         }
-        return members;
+        return 0;
     }
 
     @Override

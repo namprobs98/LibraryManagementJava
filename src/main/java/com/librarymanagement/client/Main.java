@@ -64,17 +64,19 @@ public class Main {
     private void manageBooks() {
         System.out.println("\n--- Manage Books ---");
         System.out.println("1. Add book");
-        System.out.println("2. List all books");
-        System.out.println("3. Update book");
-        System.out.println("4. Delete book");
-        System.out.println("5. Back");
-        int choice = readInt(1, 5);
+        System.out.println("2. Search book");
+        System.out.println("3. List all books");
+        System.out.println("4. Update book");
+        System.out.println("5. Delete book");
+        System.out.println("6. Back");
+        int choice = readInt(1, 6);
 
         switch (choice) {
             case 1 -> addBook();
-            case 2 -> listBooks();
-            case 3 -> updateBook();
-            case 4 -> deleteBook();
+            case 2 -> searchBooks();
+            case 3 -> listBooks();
+            case 4 -> updateBook();
+            case 5 -> deleteBook();
         }
     }
 
@@ -93,6 +95,27 @@ public class Main {
         Book book = new Book(id, title, author, genre, copies);
         boolean success = bookService.addBook(book);
         System.out.println(success ? "Book added successfully!" : "Book ID already exists!");
+    }
+
+    private void searchBooks() {
+        System.out.print("Search (title/author/genre): ");
+        String query = scanner.nextLine().trim();
+
+        if (query.isEmpty()) {
+            System.out.println("Please enter a search term.");
+            return;
+        }
+
+        List<Book> results = bookService.searchBooks(query);
+        if (results.isEmpty()) {
+            System.out.println("No books found matching: " + query);
+            return;
+        }
+
+        System.out.println("\n--- Search Results (" + results.size() + " books) ---");
+        for (Book b : results) {
+            System.out.println(b);
+        }
     }
 
     private void listBooks() {

@@ -45,18 +45,47 @@ public class BorrowRecordRepositoryImpl implements BorrowRecordRepository {
 
     @Override
     public List<BorrowRecord> findAll() {
+        return findAll(new PageRequest(0, 1000)).getData();
+    }
+
+    @Override
+    public PagedResult<BorrowRecord> findAll(PageRequest pageRequest) {
         List<BorrowRecord> records = new ArrayList<>();
-        String sql = "SELECT * FROM borrow_records";
+        String order = pageRequest.isAscending() ? "ASC" : "DESC";
+        String sql = "SELECT * FROM borrow_records ORDER BY " + pageRequest.getSortBy() + " " + order +
+                     " LIMIT ? OFFSET ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, pageRequest.getSize());
+            stmt.setInt(2, pageRequest.getOffset());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    records.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error finding borrow records: " + e.getMessage(), e);
+        }
+
+        long total = count();
+        return new PagedResult<>(records, pageRequest.getPage(), pageRequest.getSize(), total);
+    }
+
+    @Override
+    public long count() {
+        String sql = "SELECT COUNT(*) FROM borrow_records";
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-            while (rs.next()) {
-                records.add(mapRow(rs));
+            if (rs.next()) {
+                return rs.getLong(1);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error finding all borrow records: " + e.getMessage(), e);
+            throw new RuntimeException("Error counting borrow records: " + e.getMessage(), e);
         }
-        return records;
+        return 0;
     }
 
     @Override

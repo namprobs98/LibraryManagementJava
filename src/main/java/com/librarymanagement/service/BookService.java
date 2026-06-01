@@ -49,4 +49,11 @@ public class BookService {
         storageService.persistCurrentIfNeeded();
         return true;
     }
+
+    public List<Book> searchBooks(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return List.of();
+        }
+        return bookRepository.search(query.trim());
+    }
 }

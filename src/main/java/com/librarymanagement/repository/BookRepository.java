@@ -8,7 +8,10 @@ public interface BookRepository {
     void save(Book book);
     Optional<Book> findById(String id);
     List<Book> findAll();
+    PagedResult<Book> findAll(PageRequest pageRequest);
+    long count();
     void deleteById(String id);
     boolean existsById(String id);
     void replaceAll(List<Book> books);
+    List<Book> search(String query);
 }

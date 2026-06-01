@@ -46,18 +46,47 @@ public class BookRepositoryImpl implements BookRepository {
 
     @Override
     public List<Book> findAll() {
+        return findAll(new PageRequest(0, 1000)).getData();
+    }
+
+    @Override
+    public PagedResult<Book> findAll(PageRequest pageRequest) {
         List<Book> books = new ArrayList<>();
-        String sql = "SELECT * FROM books";
+        String order = pageRequest.isAscending() ? "ASC" : "DESC";
+        String sql = "SELECT * FROM books ORDER BY " + pageRequest.getSortBy() + " " + order +
+                     " LIMIT ? OFFSET ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, pageRequest.getSize());
+            stmt.setInt(2, pageRequest.getOffset());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    books.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error finding books: " + e.getMessage(), e);
+        }
+
+        long total = count();
+        return new PagedResult<>(books, pageRequest.getPage(), pageRequest.getSize(), total);
+    }
+
+    @Override
+    public long count() {
+        String sql = "SELECT COUNT(*) FROM books";
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-            while (rs.next()) {
-                books.add(mapRow(rs));
+            if (rs.next()) {
+                return rs.getLong(1);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error finding all books: " + e.getMessage(), e);
+            throw new RuntimeException("Error counting books: " + e.getMessage(), e);
         }
-        return books;
+        return 0;
     }
 
     @Override
@@ -109,5 +138,55 @@ public class BookRepositoryImpl implements BookRepository {
         );
         book.setBorrowed(rs.getInt("borrowed"));
         return book;
+    }
+
+    @Override
+    public List<Book> search(String query) {
+        List<Book> books = new ArrayList<>();
+
+        // Enable unaccent extension if not exists
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("CREATE EXTENSION IF NOT EXISTS unaccent");
+        } catch (SQLException e) {
+            // Extension might already exist or no permission, continue anyway
+        }
+
+        // Search with unaccent for Vietnamese support
+        // The query is matched in sequence but can skip characters
+        // e.g., "De men" matches "Dế mèn phiêu lưu lý"
+        String sql = """
+            SELECT * FROM books
+            WHERE unaccent(LOWER(title)) LIKE unaccent(LOWER(?))
+               OR unaccent(LOWER(author)) LIKE unaccent(LOWER(?))
+               OR unaccent(LOWER(genre)) LIKE unaccent(LOWER(?))
+            ORDER BY title
+            LIMIT 100
+            """;
+
+        // Convert query to LIKE pattern: "De men" -> "%d%e%m%e%n%"
+        // Each character in sequence must appear, but can have anything in between
+        StringBuilder pattern = new StringBuilder("%");
+        for (char c : query.toLowerCase().toCharArray()) {
+            pattern.append(c).append("%");
+        }
+        String likeQuery = pattern.toString();
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, likeQuery);
+            stmt.setString(2, likeQuery);
+            stmt.setString(3, likeQuery);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    books.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error searching books: " + e.getMessage(), e);
+        }
+
+        return books;
     }
 }
