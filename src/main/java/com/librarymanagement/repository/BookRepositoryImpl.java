@@ -115,18 +115,53 @@ public class BookRepositoryImpl implements BookRepository {
         }
     }
 
-    @Override
-    public void replaceAll(List<Book> books) {
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute("DELETE FROM books");
-            for (Book book : books) {
-                save(book);
+@Override
+public void replaceAll(List<Book> books) {
+
+    String deleteSql = "DELETE FROM books";
+
+    try (Connection conn = DatabaseConnection.getConnection()) {
+
+        conn.setAutoCommit(false);
+
+        try {
+
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(deleteSql);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error replacing all books: " + e.getMessage(), e);
+
+            for (Book book : books) {
+
+                String insertSql =
+                        "INSERT INTO books(id,title,author,genre,copies,borrowed) " +
+                        "VALUES(?,?,?,?,?,?)";
+
+                try (PreparedStatement ps =
+                             conn.prepareStatement(insertSql)) {
+
+                    ps.setString(1, book.getId());
+                    ps.setString(2, book.getTitle());
+                    ps.setString(3, book.getAuthor());
+                    ps.setString(4, book.getGenre());
+                    ps.setInt(5, book.getCopies());
+                    ps.setInt(6, book.getBorrowed());
+
+                    ps.executeUpdate();
+                }
+            }
+
+            conn.commit();
+
+        } catch (Exception e) {
+
+            conn.rollback();
+            throw e;
         }
+
+    } catch (Exception e) {
+        throw new RuntimeException(e);
     }
+}
 
     private Book mapRow(ResultSet rs) throws SQLException {
         Book book = new Book(

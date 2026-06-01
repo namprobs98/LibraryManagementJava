@@ -71,4 +71,32 @@ public class DatabaseConnection {
             System.err.println("Error closing connection: " + e.getMessage());
         }
     }
+
+    /**
+     * Rollback một connection mà không throw exception.
+     * Dùng trong catch block khi đã có exception khác cần xử lý.
+     */
+    public static void rollbackQuietly(Connection conn) {
+        if (conn != null) {
+            try {
+                conn.rollback();
+            } catch (SQLException e) {
+                System.err.println("Error during rollback: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Khôi phục auto-commit về true sau khi dùng transaction.
+     * Gọi trong finally block để đảm bảo connection trở về trạng thái bình thường.
+     */
+    public static void restoreAutoCommit(Connection conn) {
+        if (conn != null) {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                System.err.println("Error restoring auto-commit: " + e.getMessage());
+            }
+        }
+    }
 }
