@@ -41,9 +41,20 @@ public class DatabaseConnection {
                     id VARCHAR(255) PRIMARY KEY,
                     name VARCHAR(255) NOT NULL,
                     email VARCHAR(255),
-                    phone VARCHAR(255)
+                    phone VARCHAR(255),
+                    joined_date VARCHAR(255)
                 )
             """);
+
+            // Add joined_date column if it doesn't exist
+            try {
+                stmt.execute("ALTER TABLE members ADD COLUMN joined_date VARCHAR(255)");
+            } catch (SQLException e) {
+                // Column already exists, ignore
+                if (!e.getMessage().contains("column") && !e.getMessage().contains("already exists")) {
+                    throw e;
+                }
+            }
 
             // Create borrow_records table
             stmt.execute("""
@@ -52,7 +63,8 @@ public class DatabaseConnection {
                     member_id VARCHAR(255),
                     book_id VARCHAR(255),
                     borrow_date VARCHAR(255),
-                    return_date VARCHAR(255)
+                    return_date VARCHAR(255),
+                    due_date VARCHAR(255)
                 )
             """);
 

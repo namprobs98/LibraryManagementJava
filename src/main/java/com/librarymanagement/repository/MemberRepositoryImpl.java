@@ -10,14 +10,31 @@ import java.util.Optional;
 public class MemberRepositoryImpl implements MemberRepository {
     @Override
     public void save(Member member) {
-        String sql = "INSERT INTO members (id, name, email, phone) VALUES (?, ?, ?, ?) " +
-                     "ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, email = EXCLUDED.email, phone = EXCLUDED.phone";
+        String sql = "INSERT INTO members (id, name, email, phone, joined_date) VALUES (?, ?, ?, ?, ?) " +
+                     "ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, email = EXCLUDED.email, phone = EXCLUDED.phone, joined_date = EXCLUDED.joined_date";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, member.getId());
             stmt.setString(2, member.getName());
             stmt.setString(3, member.getEmail());
             stmt.setString(4, member.getPhone());
+            stmt.setString(5, member.getJoinedDate());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error saving member: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void save(Member member, Connection conn) {
+        String sql = "INSERT INTO members (id, name, email, phone, joined_date) VALUES (?, ?, ?, ?, ?) " +
+                     "ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, email = EXCLUDED.email, phone = EXCLUDED.phone, joined_date = EXCLUDED.joined_date";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, member.getId());
+            stmt.setString(2, member.getName());
+            stmt.setString(3, member.getEmail());
+            stmt.setString(4, member.getPhone());
+            stmt.setString(5, member.getJoinedDate());
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Error saving member: " + e.getMessage(), e);
@@ -113,6 +130,19 @@ public class MemberRepositoryImpl implements MemberRepository {
     }
 
     @Override
+    public boolean existsById(String id, Connection conn) {
+        String sql = "SELECT 1 FROM members WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error checking member existence: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
     public void replaceAll(List<Member> members) {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement()) {
@@ -125,12 +155,26 @@ public class MemberRepositoryImpl implements MemberRepository {
         }
     }
 
+    @Override
+    public void replaceAll(List<Member> members, Connection conn) {
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("DELETE FROM members");
+            for (Member member : members) {
+                save(member, conn);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error replacing all members: " + e.getMessage(), e);
+        }
+    }
+
     private Member mapRow(ResultSet rs) throws SQLException {
-        return new Member(
+        Member member = new Member(
                 rs.getString("id"),
                 rs.getString("name"),
                 rs.getString("email"),
                 rs.getString("phone")
         );
+        member.setJoinedDate(rs.getString("joined_date"));
+        return member;
     }
 }

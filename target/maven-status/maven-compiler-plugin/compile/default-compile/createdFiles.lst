@@ -4,9 +4,9 @@ com\librarymanagement\service\LibrarySnapshot.class
 com\librarymanagement\service\StorageService.class
 com\librarymanagement\repository\MemberRepositoryImpl.class
 com\librarymanagement\repository\BorrowRecordRepositoryImpl.class
+com\librarymanagement\client\TablePrinter.class
 com\librarymanagement\repository\BookRepositoryImpl.class
 com\librarymanagement\service\BorrowService.class
-com\librarymanagement\config\TestSearch.class
 com\librarymanagement\entity\BorrowRecord.class
 com\librarymanagement\entity\Member.class
 com\librarymanagement\repository\BorrowRecordRepository.class

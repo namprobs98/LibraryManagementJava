@@ -6,6 +6,11 @@ public class BorrowRecord {
     private String bookId;
     private String borrowDate;
     private String returnDate;
+    private String dueDate;
+
+    // For display purposes - populated when fetching records
+    private String bookTitle;
+    private String memberName;
 
     public BorrowRecord() {
     }
@@ -28,6 +33,16 @@ public class BorrowRecord {
     public void setBorrowDate(String borrowDate) { this.borrowDate = borrowDate; }
     public String getReturnDate() { return returnDate; }
     public void setReturnDate(String returnDate) { this.returnDate = returnDate; }
+    public String getDueDate() { return dueDate; }
+    public void setDueDate(String dueDate) { this.dueDate = dueDate; }
+    public String getBookTitle() { return bookTitle; }
+    public void setBookTitle(String bookTitle) { this.bookTitle = bookTitle; }
+    public String getMemberName() { return memberName; }
+    public void setMemberName(String memberName) { this.memberName = memberName; }
+
+    public boolean isReturned() {
+        return returnDate != null && !returnDate.isEmpty();
+    }
 
     @Override
     public String toString() {

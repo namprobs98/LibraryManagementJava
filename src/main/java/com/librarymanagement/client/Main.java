@@ -113,9 +113,7 @@ public class Main {
         }
 
         System.out.println("\n--- Search Results (" + results.size() + " books) ---");
-        for (Book b : results) {
-            System.out.println(b);
-        }
+        TablePrinter.printBooks(results);
     }
 
     private void listBooks() {
@@ -125,9 +123,7 @@ public class Main {
             return;
         }
         System.out.println("\n--- Books ---");
-        for (Book b : books) {
-            System.out.println(b);
-        }
+        TablePrinter.printBooks(books);
     }
 
     private void updateBook() {
@@ -192,9 +188,7 @@ public class Main {
             return;
         }
         System.out.println("\n--- Members ---");
-        for (Member m : members) {
-            System.out.println(m);
-        }
+        TablePrinter.printMembers(members);
     }
 
     private void updateMember() {
@@ -260,9 +254,7 @@ public class Main {
             return;
         }
         System.out.println("\n--- Borrow Records ---");
-        for (BorrowRecord r : records) {
-            System.out.println(r);
-        }
+        TablePrinter.printBorrowRecords(records);
     }
 
     private void chooseStorage() {

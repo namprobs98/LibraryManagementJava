@@ -5,6 +5,7 @@ public class Member {
     private String name;
     private String email;
     private String phone;
+    private String joinedDate;
 
     public Member() {
     }
@@ -24,6 +25,8 @@ public class Member {
     public void setEmail(String email) { this.email = email; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+    public String getJoinedDate() { return joinedDate; }
+    public void setJoinedDate(String joinedDate) { this.joinedDate = joinedDate; }
 
     @Override
     public String toString() {

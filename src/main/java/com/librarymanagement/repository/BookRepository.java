@@ -14,6 +14,7 @@ public interface BookRepository {
     List<Book> findAll();
     PagedResult<Book> findAll(PageRequest pageRequest);
     long count();
+    long count(PageRequest pageRequest);
     void deleteById(String id);
     boolean existsById(String id);
     boolean existsById(String id, Connection conn);
